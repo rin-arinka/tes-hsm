@@ -1,5 +1,6 @@
 package com.tes.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.tes.backend.enums.MetodePembayaran;
 import com.tes.backend.enums.StatusTransaksi;
 import jakarta.persistence.*;
@@ -50,6 +51,11 @@ public class Transaksi {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
+    private User pembeli;
 
     @OneToMany(mappedBy = "transaksi", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TransaksiItem> items;
