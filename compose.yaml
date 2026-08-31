@@ -1,10 +1,26 @@
 services:
-  mysql:
-    image: 'mysql:latest'
+  db:
+    image: mysql:latest
     environment:
-      - 'MYSQL_DATABASE=mydatabase'
-      - 'MYSQL_PASSWORD=secret'
-      - 'MYSQL_ROOT_PASSWORD=verysecret'
-      - 'MYSQL_USER=myuser'
+      MYSQL_DATABASE: tes_backend
+      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: "yes"
     ports:
-      - '3306'
+      - "3306:3306"
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    ports:
+      - "8055:8055"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/tes_backend
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ""
+    depends_on:
+      db:
+        condition: service_healthy

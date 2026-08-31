@@ -4,9 +4,12 @@ import com.tes.backend.dto.TransaksiRequest;
 import com.tes.backend.entity.Produk;
 import com.tes.backend.entity.Transaksi;
 import com.tes.backend.entity.TransaksiItem;
+import com.tes.backend.entity.User;
+import com.tes.backend.enums.Role;
 import com.tes.backend.repository.ProdukRepository;
 import com.tes.backend.repository.TransaksiRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,17 +25,30 @@ public class TransaksiService {
     private final ProdukRepository produkRepo;
 
     public List<Transaksi> findAll() {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (user.getRole() == Role.SUPERADMIN) {
         return transaksiRepo.findAll();
+        } else {
+            return transaksiRepo.findByPembeliId(user.getId());
+        }
     }
 
     public Transaksi findById(Long id) {
-        return transaksiRepo.findById(id)
+        Transaksi transaksi = transaksiRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Transaksi tidak ditemukan: " + id));
+
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (user.getRole() != Role.SUPERADMIN && !transaksi.getPembeli().getId().equals(user.getId())) {
+            throw new RuntimeException("Akses ditolak: transaksi ini bukan milik Anda");
+        }
+        return transaksi;
     }
 
     @Transactional
     public Transaksi create(TransaksiRequest req) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Transaksi transaksi = new Transaksi();
+        transaksi.setPembeli(user);
         mapFields(transaksi, req);
         return transaksiRepo.save(transaksi);
     }
